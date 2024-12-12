@@ -6,6 +6,7 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedPlayerInput.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 
 // Sets default values
@@ -15,8 +16,13 @@ ASCharacter::ASCharacter()
 	PrimaryActorTick.bCanEverTick = true;
 	SpringArmComponent = CreateDefaultSubobject<USpringArmComponent>("SpringArm");
 	SpringArmComponent->SetupAttachment(RootComponent);
+	SpringArmComponent->bUsePawnControlRotation = true;
 	CameraComponent = CreateDefaultSubobject<UCameraComponent>("Camera");
 	CameraComponent->SetupAttachment(SpringArmComponent);
+
+	GetCharacterMovement()->bOrientRotationToMovement = true;
+	
+	bUseControllerRotationYaw = false;
 }
 
 // Called when the game starts or when spawned
@@ -52,13 +58,15 @@ void ASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 	UE_LOG(LogTemp,Warning,TEXT("SetupPlayerInputComponent Finish"));
 	UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent);
-	if (EnhancedInputComponent && MoveAction && LookAction)
+	if (EnhancedInputComponent && MoveAction && LookAction && MyAttackAction)
 	{
 		UE_LOG(LogTemp,Warning,TEXT("MoveAction and LookAction Finish"));
+		//绑定移动
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered,this,&ASCharacter::Move);
-		
+		//绑定视角旋转
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ASCharacter::Look);
- 
+		//绑定按下鼠标左键攻击
+		EnhancedInputComponent->BindAction(MyAttackAction, ETriggerEvent::Triggered, this, &ASCharacter::AttackAction);
 	}
 }
 
@@ -66,15 +74,16 @@ void ASCharacter::Move(const FInputActionValue& Value)
 {
 	UE_LOG(LogTemp,Warning,TEXT("Move Value : %f"),Value);
 	FVector2D MovementVector = Value.Get<FVector2D>();
+	
 	if (Controller)
 	{
 		const FRotator ControlRotation = Controller->GetControlRotation();
 		const FRotator YawRotation = FRotator(0.0f,ControlRotation.Yaw,0.0f);
- 
+		//前后移动
 		const FVector ForawrdDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
-		const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
- 
-		AddMovementInput(ForawrdDirection,MovementVector.Y);
+		AddMovementInput(ControlRotation.Vector(),MovementVector.Y);
+		//左右移动
+		const FVector RightDirection = FRotationMatrix(ControlRotation).GetScaledAxis(EAxis::Y);
 		AddMovementInput(RightDirection, MovementVector.X);
 	}
 }
@@ -90,4 +99,22 @@ void ASCharacter::Look(const FInputActionValue& Value)
 		AddControllerYawInput(LookVector.X);
 		AddControllerPitchInput(LookVector.Y);
 	}
+}
+
+void ASCharacter::AttackAction(const FInputActionValue& Value)
+{
+	if(ProjectileClass==nullptr)
+	{
+		return;
+	}
+	
+	bool BoolValue = Value.Get<bool>();
+	UE_LOG(LogTemp,Warning,TEXT("AttackAction"));
+	//生成位置
+	FVector HandLocation = GetMesh()->GetSocketLocation("Muzzle_01");
+	FTransform SpawnTransform = FTransform(GetControlRotation(),HandLocation);
+	//生成碰撞规则
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	GetWorld()->SpawnActor<AActor>(ProjectileClass,SpawnTransform,SpawnParams);
 }

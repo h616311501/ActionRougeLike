@@ -33,12 +33,17 @@ protected:
 	void Move(const FInputActionValue& Value);
 
 	void Look(const FInputActionValue& Value);
+
+	void AttackAction(const FInputActionValue& Value);
 	UPROPERTY(VisibleAnywhere,Category="SCharacter")
 	USpringArmComponent* SpringArmComponent;
 	
 	UPROPERTY(VisibleAnywhere,Category="SCharacter")
 	UCameraComponent* CameraComponent;
-
+	
+	UPROPERTY(EditAnywhere,Category="SCharacter")
+	TSubclassOf<AActor> ProjectileClass;//TSubclassOf 只显示寻找类以及子类
+	
 	//输入映射
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
 	class UInputMappingContext* DefaultMappingContext;
@@ -48,6 +53,9 @@ protected:
 	//上下左右看
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
 	class UInputAction* LookAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
+	class UInputAction* MyAttackAction;
 private:
 
 
