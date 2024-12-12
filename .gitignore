@@ -52,6 +52,7 @@ Plugins/**/Binaries/*
 # Builds
 Build/*
 
+
 # Whitelist PakBlacklist-<BuildConfiguration>.txt files
 !Build/*/
 Build/*/**
@@ -72,3 +73,10 @@ Plugins/**/Intermediate/*
 
 # Cache files for the editor to use
 DerivedDataCache/*
+
+#Big Content
+Content/ParagonGideon/*
+Content/ParagonMinions/*
+Content/ThirdPerson/*
+Content/LevelPrototyping/*
+Content/Characters/*
