@@ -8,6 +8,7 @@
 
 #include "GameFramework/Character.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "InteractionComponent/SInteractionComponent.h"
 #include "SCharacter.generated.h"
 
 class UInputMappingContext;
@@ -34,16 +35,18 @@ protected:
 
 	void Look(const FInputActionValue& Value);
 
-	void AttackAction(const FInputActionValue& Value);
+	void Attack(const FInputActionValue& Value);
 	UPROPERTY(VisibleAnywhere,Category="SCharacter")
 	USpringArmComponent* SpringArmComponent;
 	
 	UPROPERTY(VisibleAnywhere,Category="SCharacter")
 	UCameraComponent* CameraComponent;
 	
-	UPROPERTY(EditAnywhere,Category="SCharacter")
+	UPROPERTY(EditAnywhere,Category="Projectile")
 	TSubclassOf<AActor> ProjectileClass;//TSubclassOf 只显示寻找类以及子类
-	
+
+	UPROPERTY(EditAnywhere,Category="SCharacter")
+	USInteractionComponent* InteractionComponent;
 	//输入映射
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
 	class UInputMappingContext* DefaultMappingContext;
@@ -55,7 +58,7 @@ protected:
 	class UInputAction* LookAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
-	class UInputAction* MyAttackAction;
+	class UInputAction* AttackAction;
 private:
 
 

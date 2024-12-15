@@ -23,6 +23,9 @@ ASCharacter::ASCharacter()
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	
 	bUseControllerRotationYaw = false;
+
+	InteractionComponent = CreateDefaultSubobject<USInteractionComponent>("InteractionComponent");
+	
 }
 
 // Called when the game starts or when spawned
@@ -32,11 +35,9 @@ void ASCharacter::BeginPlay()
 	APlayerController* PlayerController = Cast<APlayerController>(Controller);
 	if(PlayerController==nullptr)
 	{
-		UE_LOG(LogTemp,Warning,TEXT("PlayerController==nullptr"));
 		return;
 	}
 	UEnhancedInputLocalPlayerSubsystem* EnhancedInputSystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer());
-	UE_LOG(LogTemp,Warning,TEXT("EnhancedInputSystem Finish"));
 	if (EnhancedInputSystem && DefaultMappingContext)
 	{
 		EnhancedInputSystem->AddMappingContext(DefaultMappingContext,0);
@@ -56,23 +57,20 @@ void ASCharacter::Tick(float DeltaTime)
 void ASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
-	UE_LOG(LogTemp,Warning,TEXT("SetupPlayerInputComponent Finish"));
 	UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent);
-	if (EnhancedInputComponent && MoveAction && LookAction && MyAttackAction)
+	if (EnhancedInputComponent && MoveAction && LookAction && AttackAction)
 	{
-		UE_LOG(LogTemp,Warning,TEXT("MoveAction and LookAction Finish"));
 		//绑定移动
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered,this,&ASCharacter::Move);
 		//绑定视角旋转
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ASCharacter::Look);
 		//绑定按下鼠标左键攻击
-		EnhancedInputComponent->BindAction(MyAttackAction, ETriggerEvent::Triggered, this, &ASCharacter::AttackAction);
+		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Triggered, this, &ASCharacter::Attack);
 	}
 }
 
 void ASCharacter::Move(const FInputActionValue& Value)
 {
-	UE_LOG(LogTemp,Warning,TEXT("Move Value : %f"),Value);
 	FVector2D MovementVector = Value.Get<FVector2D>();
 	
 	if (Controller)
@@ -94,20 +92,21 @@ void ASCharacter::Look(const FInputActionValue& Value)
 	FVector2D LookVector = Value.Get<FVector2D>();
 	if (Controller)
 	{
-		UE_LOG(LogTemp,Warning,TEXT("Look Value X : %f"),LookVector.X);
-		UE_LOG(LogTemp,Warning,TEXT("Look Value Y : %f"),LookVector.Y);
 		AddControllerYawInput(LookVector.X);
 		AddControllerPitchInput(LookVector.Y);
 	}
 }
 
-void ASCharacter::AttackAction(const FInputActionValue& Value)
+void ASCharacter::Attack(const FInputActionValue& Value)
 {
 	if(ProjectileClass==nullptr)
 	{
 		return;
 	}
-	
+	if (InteractionComponent)
+	{
+		InteractionComponent->PrimaryInteract();
+	}
 	bool BoolValue = Value.Get<bool>();
 	UE_LOG(LogTemp,Warning,TEXT("AttackAction"));
 	//生成位置
