@@ -27,7 +27,6 @@ void USInteractionComponent::PrimaryInteract()
 	float Radius = 30.f;
 	FCollisionShape CollisionShape;
 	CollisionShape.SetSphere(Radius);
-
 	bool bBlockHit = GetWorld()->SweepMultiByObjectType(HitResults,Eyelocation,EndLocation,FQuat::Identity,CollisionObjectQueryParams,CollisionShape);
 	FColor Color = bBlockHit? FColor::Green : FColor::Red;
 	for (FHitResult HitResult : HitResults)

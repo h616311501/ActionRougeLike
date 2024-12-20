@@ -8,6 +8,7 @@
 #include "EnhancedPlayerInput.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Kismet/KismetMathLibrary.h"
 
 // Sets default values
 ASCharacter::ASCharacter()
@@ -25,7 +26,7 @@ ASCharacter::ASCharacter()
 	bUseControllerRotationYaw = false;
 
 	InteractionComponent = CreateDefaultSubobject<USInteractionComponent>("InteractionComponent");
-	
+	AttibuteComponent = CreateDefaultSubobject<USAttibuteComponent>("AttibuteComponent");
 }
 
 // Called when the game starts or when spawned
@@ -66,6 +67,9 @@ void ASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ASCharacter::Look);
 		//绑定按下鼠标左键攻击
 		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Triggered, this, &ASCharacter::Attack);
+		//绑定按下跳跃
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Triggered, this, &ASCharacter::Jump);
+		
 	}
 }
 
@@ -107,13 +111,26 @@ void ASCharacter::Attack(const FInputActionValue& Value)
 	{
 		InteractionComponent->PrimaryInteract();
 	}
-	bool BoolValue = Value.Get<bool>();
-	UE_LOG(LogTemp,Warning,TEXT("AttackAction"));
-	//生成位置
-	FVector HandLocation = GetMesh()->GetSocketLocation("Muzzle_01");
-	FTransform SpawnTransform = FTransform(GetControlRotation(),HandLocation);
-	//生成碰撞规则
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	GetWorld()->SpawnActor<AActor>(ProjectileClass,SpawnTransform,SpawnParams);
+	PlayAnimMontage(AttackMontage);
+	GetWorldTimerManager().SetTimer(TimerHandle_PrimaryAttck,this,&ASCharacter::PrimaryAttck_TimerHandle,0.2f);
+	//获取屏幕中间的方向，让角色旋转向屏幕的中心方向
+	FRotator ActorLookRotator = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(),GetOwner()->GetActorLocation());
+	GetMesh()->SetWorldRotation(ActorLookRotator);
+}
+
+void ASCharacter::PrimaryAttck_TimerHandle()
+{
+	if (ensure(ProjectileClass))
+	{
+		UE_LOG(LogTemp,Warning,TEXT("AttackAction"));
+		//生成位置
+		FVector HandLocation = GetMesh()->GetSocketLocation("Muzzle_01");
+		FTransform SpawnTransform = FTransform(GetControlRotation(),HandLocation);
+		//生成碰撞规则
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		SpawnParams.Instigator = this;
+		GetWorld()->SpawnActor<AActor>(ProjectileClass,SpawnTransform,SpawnParams);
+	}
+
 }
